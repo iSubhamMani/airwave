@@ -1,5 +1,3 @@
-import { AnimatedShinyText } from "@/components/magicui/animated-shiny-text";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Camera, ChevronDown, Play, Shield, Users, Zap } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -61,10 +60,12 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button className="text-xs sm:text-sm group bg-green-200 text-green-700 hover:bg-green-200 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out hover:shadow-[0_0_15px_rgba(22,163,74,0.7)]">
-              <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-              Start Streaming
-            </Button>
+            <Link href={"/signup"}>
+              <Button className="text-xs sm:text-sm group bg-green-200 text-green-700 hover:bg-green-200 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out hover:shadow-[0_0_15px_rgba(22,163,74,0.7)]">
+                <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                Start Streaming
+              </Button>
+            </Link>
             <Button
               variant="outline"
               className="text-xs sm:text-sm border-gray-400 text-white shadow-xl hover:bg-white hover:text-green-700 bg-transparent cursor-pointer"
