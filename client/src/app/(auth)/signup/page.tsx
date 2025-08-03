@@ -1,6 +1,7 @@
 "use client";
 
 import { InteractiveHoverButton } from "@/components/InteractiveHoverButton";
+import { errorStyle, successStyle } from "@/components/Toast";
 import {
   CardContent,
   CardDescription,
@@ -11,13 +12,86 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { toast } from "sonner";
+import axios, { isAxiosError } from "axios";
 
 const Signup = () => {
   const [fullname, setFullname] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const router = useRouter();
+
+  const verifyCredentials = (password: string, email: string) => {
+    try {
+      const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isEmailValid) throw new Error("Invalid email address");
+
+      const isPasswordValid = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(
+        password
+      ); // At least 8 characters, at least one letter and one number
+      if (!isPasswordValid)
+        throw new Error(
+          "Password must be at least 8 characters long and contain at least one letter and one number"
+        );
+      return true;
+    } catch (error) {
+      toast(
+        error instanceof Error ? error.message : "Error validating credentials",
+        {
+          duration: 5000,
+          position: "top-center",
+          style: errorStyle,
+        }
+      );
+      return false;
+    }
+  };
+
+  const handleSignup = async () => {
+    const isValidCredentials = verifyCredentials(password, email);
+    if (!isValidCredentials) return;
+
+    try {
+      setLoading(true);
+      const res = await axios.post("/api/auth/signup", {
+        email,
+        password,
+        fullname,
+      });
+
+      if (res.status === 200) {
+        toast("Signup successful! Please verify your email", {
+          duration: 3000,
+          position: "top-center",
+          style: successStyle,
+        });
+        setEmail("");
+        setPassword("");
+        setFullname("");
+        router.replace("/verify");
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        toast(error.response?.data?.error || "Error signing up", {
+          duration: 5000,
+          position: "top-center",
+          style: errorStyle,
+        });
+      } else {
+        toast("Error signing up", {
+          duration: 5000,
+          position: "top-center",
+          style: errorStyle,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -39,7 +113,7 @@ const Signup = () => {
           </Label>
           <Input
             value={fullname}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setFullname(e.target.value)}
             id="fullname"
             type="text"
             placeholder="Enter your full name"
@@ -88,7 +162,11 @@ const Signup = () => {
             )}
           </div>
         </div>
-        <InteractiveHoverButton className="text-xs sm:text-sm bg-white">
+        <InteractiveHoverButton
+          onClick={handleSignup}
+          disabled={loading}
+          className="text-xs sm:text-sm bg-white"
+        >
           Signup
         </InteractiveHoverButton>
         <p className="text-xs sm:text-sm text-white text-center">
