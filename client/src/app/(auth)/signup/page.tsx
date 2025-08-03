@@ -1,3 +1,5 @@
+"use client";
+
 import { InteractiveHoverButton } from "@/components/InteractiveHoverButton";
 import {
   CardContent,
@@ -7,10 +9,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 const Signup = () => {
+  const [fullname, setFullname] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
+
   return (
     <>
       <CardHeader>
@@ -23,10 +31,28 @@ const Signup = () => {
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
         <div className="space-y-2 w-full">
+          <Label
+            htmlFor="fullname"
+            className="text-green-200 text-xs sm:text-sm"
+          >
+            Full Name
+          </Label>
+          <Input
+            value={fullname}
+            onChange={(e) => setEmail(e.target.value)}
+            id="fullname"
+            type="text"
+            placeholder="Enter your full name"
+            className="text-xs sm:text-sm text-white"
+          />
+        </div>
+        <div className="space-y-2 w-full">
           <Label htmlFor="email" className="text-green-200 text-xs sm:text-sm">
             Email
           </Label>
           <Input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             id="email"
             type="email"
             placeholder="Enter your email"
@@ -34,15 +60,33 @@ const Signup = () => {
           />
         </div>
         <div className="space-y-2 w-full">
-          <Label htmlFor="email" className="text-green-200 text-xs sm:text-sm">
+          <Label
+            htmlFor="password"
+            className="text-green-200 text-xs sm:text-sm"
+          >
             Password
           </Label>
-          <Input
-            id="email"
-            type="password"
-            placeholder="Enter your password"
-            className="text-xs sm:text-sm text-white"
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              id="password"
+              type={passwordVisible ? "text" : "password"}
+              placeholder="Enter your password"
+              className="text-xs sm:text-sm text-white"
+            />
+            {passwordVisible ? (
+              <EyeOff
+                onClick={() => setPasswordVisible(false)}
+                className="text-green-200 size-5"
+              />
+            ) : (
+              <Eye
+                onClick={() => setPasswordVisible(true)}
+                className="text-green-200 size-5"
+              />
+            )}
+          </div>
         </div>
         <InteractiveHoverButton className="text-xs sm:text-sm bg-white">
           Signup
