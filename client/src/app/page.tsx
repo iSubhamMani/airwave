@@ -1,3 +1,5 @@
+import { AnimatedShinyText } from "@/components/magicui/animated-shiny-text";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Camera, ChevronDown, Play, Shield, Users, Zap } from "lucide-react";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -20,7 +23,7 @@ export default function Home() {
             background: `
               radial-gradient(circle at 20% 80%, rgba(22, 163, 74, 0.3), transparent 50%), /* Green tint */
               radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1), transparent 50%),
-              linear-gradient(135deg, #16a34a 0%, #15803d 20%, #166534 25%, #000000 60%)
+              linear-gradient(135deg, #000 0%, #000 30%, #166534 50%, #000000 60%)
             `,
           }}
         />
@@ -34,22 +37,37 @@ export default function Home() {
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Airwave
-          </h1>
+          <div className="hidden sm:block font-semibold bg-green-200 text-green-700 mb-4 text-xs sm:text-sm rounded-full py-3 w-max px-4 mx-auto shadow-xl relative overflow-hidden">
+            <span className="absolute inset-0 block bg-gradient-to-r from-transparent via-white to-transparent opacity-50 animate-shine"></span>
+            ✨ Built for seamless 1:1 podcast streaming
+          </div>
+          <div className="flex items-center justify-center">
+            <div className="overflow-hidden size-16 sm:size-20 p-2">
+              <Image
+                src={"/logo.png"}
+                alt="Airwave Logo"
+                width={80}
+                height={80}
+                className="-mt-3 sm:-mt-2 w-full h-full object-cover"
+              />
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+              Airwave
+            </h1>
+          </div>
 
-          <p className="text-balance text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-balance text-lg sm:text-xl md:text-2xl mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed">
             Your all-in-one studio to stream, record, and go live with ease.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button className="group bg-green-500 text-black hover:bg-green-400 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out hover:shadow-[0_0_15px_rgba(22,163,74,0.7)]">
+            <Button className="text-xs sm:text-sm group bg-green-200 text-green-700 hover:bg-green-200 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out hover:shadow-[0_0_15px_rgba(22,163,74,0.7)]">
               <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
               Start Streaming
             </Button>
             <Button
               variant="outline"
-              className="border-gray-400 text-white shadow-xl hover:bg-white hover:text-black bg-transparent cursor-pointer"
+              className="text-xs sm:text-sm border-gray-400 text-white shadow-xl hover:bg-white hover:text-green-700 bg-transparent cursor-pointer"
             >
               Watch Demo
             </Button>
@@ -73,17 +91,18 @@ export default function Home() {
             <ChevronDown className="w-8 h-8 text-white animate-bounce mt-12" />
           </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-black to-transparent z-20"></div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="py-24 bg-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
               Everything You Need to
               <span className="block text-green-400">Go Live</span>
             </h2>
-            <p className="text-xl text-green-200 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-green-200 max-w-2xl mx-auto text-balance">
               Professional-grade streaming tools that make live podcasting
               effortless
             </p>
@@ -112,15 +131,15 @@ export default function Home() {
             ].map((feature, index) => (
               <Card key={index} className="bg-green-800/20 border-green-800">
                 <CardHeader>
-                  <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center text-green-400 mb-4">
+                  <div className="size-6 sm:size-12 bg-transparent md:bg-green-500/20 rounded-lg flex items-center justify-center text-green-400 mb-4">
                     {feature.icon}
                   </div>
-                  <CardTitle className="text-white font-bold text-xl">
+                  <CardTitle className="text-white font-bold text-lg sm:text-xl">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-green-200 text-base leading-relaxed">
+                  <CardDescription className="text-green-200 text-sm sm:text-base leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardContent>
