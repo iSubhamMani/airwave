@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import axios, { isAxiosError } from "axios";
+import { sendOtp } from "@/actions/email/send";
+import { useAuth } from "@/store/auth";
 
 const Signup = () => {
   const [fullname, setFullname] = useState<string>("");
@@ -24,6 +26,7 @@ const Signup = () => {
   const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
+  const { setEmailSent } = useAuth((store) => store);
 
   const verifyCredentials = (password: string, email: string) => {
     try {
@@ -64,15 +67,35 @@ const Signup = () => {
       });
 
       if (res.status === 200) {
-        toast("Signup successful! Please verify your email", {
+        toast("Signup successful!", {
           duration: 3000,
           position: "top-center",
           style: successStyle,
         });
-        setEmail("");
-        setPassword("");
-        setFullname("");
-        router.replace("/verify");
+
+        try {
+          const res = await sendOtp(email);
+
+          if (res.success) {
+            setEmailSent(true);
+            setEmail("");
+            setFullname("");
+            setPassword("");
+            toast("OTP has been sent!", {
+              duration: 3000,
+              position: "top-center",
+              style: successStyle,
+            });
+
+            router.replace("/verify");
+          }
+        } catch (error) {
+          toast(error instanceof Error ? error.message : "Error sending OTP", {
+            duration: 3000,
+            position: "top-center",
+            style: errorStyle,
+          });
+        }
       }
     } catch (error) {
       if (isAxiosError(error)) {
