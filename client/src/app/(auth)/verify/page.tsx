@@ -1,6 +1,8 @@
 "use client";
 
+import { sendOtp } from "@/actions/email/send";
 import { InteractiveHoverButton } from "@/components/InteractiveHoverButton";
+import { errorStyle, successStyle } from "@/components/Toast";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,11 +14,34 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/store/auth";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const VerifyEmail = () => {
   const [otp, setOtp] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const { emailSent } = useAuth((store) => store);
+  const { emailSent, setEmailSent } = useAuth((store) => store);
+
+  const handleOtpSend = async () => {
+    try {
+      const res = await sendOtp(email);
+
+      if (res.success) {
+        setEmailSent(true);
+        setEmail("");
+        toast("OTP has been sent!", {
+          duration: 3000,
+          position: "top-center",
+          style: successStyle,
+        });
+      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Error sending OTP", {
+        duration: 3000,
+        position: "top-center",
+        style: errorStyle,
+      });
+    }
+  };
 
   return (
     <>
@@ -72,9 +97,18 @@ const VerifyEmail = () => {
           </div>
         )}
 
-        <InteractiveHoverButton className="text-xs sm:text-sm">
-          {emailSent ? "Verify OTP" : "Send OTP"}
-        </InteractiveHoverButton>
+        {emailSent ? (
+          <InteractiveHoverButton className="text-xs sm:text-sm">
+            Verify OTP
+          </InteractiveHoverButton>
+        ) : (
+          <InteractiveHoverButton
+            onClick={handleOtpSend}
+            className="text-xs sm:text-sm"
+          >
+            Send OTP
+          </InteractiveHoverButton>
+        )}
       </CardContent>
     </>
   );
