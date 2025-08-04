@@ -27,13 +27,10 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user into the database
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a random 6-digit OTP
     await db.insert(usersTable).values({
       email,
       password: hashedPassword,
       name: fullname,
-      otp,
-      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000), // OTP valid for 10 minutes
     });
 
     return NextResponse.json(
