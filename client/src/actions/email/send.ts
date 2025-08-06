@@ -3,12 +3,11 @@ import { EmailTemplate } from "@/components/otp-email-template";
 import { Resend } from "resend";
 import { db } from "@/db";
 import { usersTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendOtp(email: string) {
-  console.log("Sending OTP to:", email);
   try {
     if (!email.trim()) throw new Error("Email is required");
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); // Basic email validation
@@ -20,7 +19,7 @@ export async function sendOtp(email: string) {
     const userExists = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .where(and(eq(usersTable.email, email), eq(usersTable.isVerified, false)))
       .limit(1);
 
     if (!userExists.length) {

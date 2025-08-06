@@ -2,17 +2,18 @@
 
 import { db } from "@/db";
 import { usersTable } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export async function verifyEmail(email: string, otp: string) {
   try {
     const users = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, email));
+      .where(and(eq(usersTable.email, email), eq(usersTable.isVerified, false)))
+      .limit(1);
 
     if (users.length === 0) {
-      throw new Error("Error Verifying - No User Found");
+      throw new Error("Error Verifying. No User Found.");
     }
 
     const user = users[0];
@@ -34,10 +35,10 @@ export async function verifyEmail(email: string, otp: string) {
       })
       .where(eq(usersTable.email, email));
 
-    return { success: true, message: "Email Verified Successfully" };
+    return { success: true, message: "Email Verified Successfully." };
   } catch (error) {
     throw new Error(
-      error instanceof Error ? error.message : "Error Verifying Email"
+      error instanceof Error ? error.message : "Error Verifying Email."
     );
   }
 }
