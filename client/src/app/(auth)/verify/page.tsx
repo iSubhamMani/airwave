@@ -1,6 +1,7 @@
 "use client";
 
 import { sendOtp } from "@/actions/email/send";
+import { verifyEmail } from "@/actions/email/verify";
 import { InteractiveHoverButton } from "@/components/InteractiveHoverButton";
 import { errorStyle, successStyle } from "@/components/Toast";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,21 +14,34 @@ import {
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/store/auth";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
+import { LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const VerifyEmail = () => {
   const [otp, setOtp] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const { emailSent, setEmailSent } = useAuth((store) => store);
+  const router = useRouter();
 
   const handleOtpSend = async () => {
+    if (!email.trim()) {
+      toast("Email is required", {
+        duration: 3000,
+        position: "top-center",
+        style: errorStyle,
+      });
+      return;
+    }
+
     try {
+      setLoading(true);
       const res = await sendOtp(email);
 
       if (res.success) {
         setEmailSent(true);
-        setEmail("");
         toast("OTP has been sent!", {
           duration: 3000,
           position: "top-center",
@@ -40,6 +54,44 @@ const VerifyEmail = () => {
         position: "top-center",
         style: errorStyle,
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailVerify = async () => {
+    if (!email.trim() || !otp.trim()) {
+      toast("OTP is required", {
+        duration: 3000,
+        position: "top-center",
+        style: errorStyle,
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await verifyEmail(email, otp);
+
+      if (res.success) {
+        setEmailSent(false);
+        setEmail("");
+        setOtp("");
+        router.replace("/login");
+        toast("Email verified successfuly!", {
+          duration: 3000,
+          position: "top-center",
+          style: successStyle,
+        });
+      }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Error verifying email.", {
+        duration: 3000,
+        position: "top-center",
+        style: errorStyle,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,7 +125,10 @@ const VerifyEmail = () => {
             </InputOTP>
             <p className="text-sm text-center text-white">
               Didn&apos;t receive the OTP?{" "}
-              <span className="text-green-200 font-bold cursor-pointer hover:underline">
+              <span
+                onClick={handleOtpSend}
+                className="text-green-200 font-bold cursor-pointer hover:underline"
+              >
                 Resend OTP
               </span>
             </p>
@@ -97,17 +152,30 @@ const VerifyEmail = () => {
           </div>
         )}
 
-        {emailSent ? (
-          <InteractiveHoverButton className="text-xs sm:text-sm">
-            Verify OTP
-          </InteractiveHoverButton>
-        ) : (
+        {loading && (
+          <div className="flex justify-center">
+            <LoaderCircle className="text-green-200 size-5 animate-spin" />
+          </div>
+        )}
+
+        {emailSent && !loading ? (
           <InteractiveHoverButton
-            onClick={handleOtpSend}
+            onClick={handleEmailVerify}
+            disabled={loading || !otp.trim()}
             className="text-xs sm:text-sm"
           >
-            Send OTP
+            Verify
           </InteractiveHoverButton>
+        ) : (
+          !loading && (
+            <InteractiveHoverButton
+              onClick={handleOtpSend}
+              disabled={loading || !email.trim()}
+              className="text-xs sm:text-sm"
+            >
+              Send OTP
+            </InteractiveHoverButton>
+          )
         )}
       </CardContent>
     </>
