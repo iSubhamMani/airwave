@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,6 +60,7 @@ const Login = () => {
           position: "top-center",
           style: errorStyle,
         });
+        router.replace("/verify");
       } else {
         toast(error instanceof Error ? error.message : "Error signing in", {
           duration: 5000,
@@ -125,13 +126,20 @@ const Login = () => {
             )}
           </div>
         </div>
-        <InteractiveHoverButton
-          onClick={handleLogin}
-          disabled={loading}
-          className="text-xs sm:text-sm"
-        >
-          Login
-        </InteractiveHoverButton>
+        {loading && (
+          <div className="flex justify-center">
+            <LoaderCircle className="text-green-200 size-5 animate-spin" />
+          </div>
+        )}
+        {!loading && (
+          <InteractiveHoverButton
+            onClick={handleLogin}
+            disabled={loading}
+            className="text-xs sm:text-sm"
+          >
+            Login
+          </InteractiveHoverButton>
+        )}
         <p className="text-xs sm:text-sm text-white text-center">
           Don&apos;t have an account?{" "}
           <Link

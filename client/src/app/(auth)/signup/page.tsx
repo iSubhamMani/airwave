@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -81,7 +81,7 @@ const Signup = () => {
             setEmail("");
             setFullname("");
             setPassword("");
-            toast("OTP has been sent!", {
+            toast("An OTP has been sent to your mail!", {
               duration: 3000,
               position: "top-center",
               style: successStyle,
@@ -185,13 +185,20 @@ const Signup = () => {
             )}
           </div>
         </div>
-        <InteractiveHoverButton
-          onClick={handleSignup}
-          disabled={loading}
-          className="text-xs sm:text-sm bg-white"
-        >
-          Signup
-        </InteractiveHoverButton>
+        {loading && (
+          <div className="flex justify-center">
+            <LoaderCircle className="text-green-200 size-5 animate-spin" />
+          </div>
+        )}
+        {!loading && (
+          <InteractiveHoverButton
+            onClick={handleSignup}
+            disabled={loading}
+            className="text-xs sm:text-sm bg-white"
+          >
+            Signup
+          </InteractiveHoverButton>
+        )}
         <p className="text-xs sm:text-sm text-white text-center">
           Already have an account?{" "}
           <Link className="text-green-200 hover:text-green-300" href={"/login"}>
