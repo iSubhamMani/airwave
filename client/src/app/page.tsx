@@ -68,7 +68,7 @@ export default function Home() {
             </Link>
             <Button
               variant="outline"
-              className="text-xs sm:text-sm border-gray-400 text-white shadow-xl hover:bg-white hover:text-green-700 bg-transparent cursor-pointer"
+              className="text-xs sm:text-sm border-gray-400 text-white shadow-xl hover:bg-white hover:text-white bg-transparent cursor-pointer"
             >
               Watch Demo
             </Button>
