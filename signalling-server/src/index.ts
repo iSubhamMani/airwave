@@ -1,25 +1,69 @@
-import bodyParser from "body-parser";
+import { Redis } from "ioredis";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const io = new Server(8000, {
   cors: { origin: "*" },
 });
 
-const emailToSocketMap = new Map();
-const socketToEmailMap = new Map();
+const meetingTable = new Redis(process.env.REDIS_URL!);
+
+interface MeetingDetails {
+  host: string;
+  guest?: string;
+  hostSid: string;
+  guestSid?: string;
+}
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
-  socket.on("room:join", (data) => {
-    const { roomCode, email } = data;
-    console.log(`User with email ${email} joined room ${roomCode}`);
 
-    emailToSocketMap.set(email, socket.id);
-    socketToEmailMap.set(socket.id, email);
+  socket.on("room:create", async ({ email }) => {
+    const roomId = Math.random().toString(36).substring(2, 8);
 
-    io.to(roomCode).emit("user:joined", { email, id: socket.id });
-    socket.join(roomCode);
-    io.to(socket.id).emit("room:join", data);
+    const meetingDetails: MeetingDetails = {
+      host: email,
+      hostSid: socket.id,
+    };
+
+    await meetingTable.set(roomId, JSON.stringify(meetingDetails));
+    socket.join(roomId);
+    socket.emit("room:created", { roomId });
+    console.log(`Room created: ${roomId} by ${email}`);
+  });
+
+  socket.on("room:join", async ({ roomId, email }) => {
+    const meetingData = await meetingTable.get(roomId);
+    if (!meetingData) {
+      socket.emit("room:error", { message: "Room not found" });
+      return;
+    }
+
+    const meetingDetails: MeetingDetails = JSON.parse(meetingData);
+
+    if (meetingDetails.guest) {
+      socket.emit("room:error", { message: "Room is full" });
+      return;
+    }
+    if (meetingDetails.host === email) {
+      return;
+    }
+
+    meetingDetails.guest = email;
+    meetingDetails.guestSid = socket.id;
+
+    await meetingTable.set(roomId, JSON.stringify(meetingDetails));
+    socket.join(roomId);
+    socket.emit("user:joined", {
+      roomId,
+      socketId: meetingDetails.hostSid,
+    });
+    socket
+      .to(meetingDetails.hostSid)
+      .emit("guest:joined", { socketId: socket.id });
+    console.log(`User ${email} joined room: ${roomId}`);
   });
 
   socket.on("user:call", ({ to, offer }) => {
