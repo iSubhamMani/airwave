@@ -15,9 +15,10 @@ export async function middleware(req: NextRequest) {
   }
 
   if (
-    (token && currentUrl.pathname === "/login") ||
-    currentUrl.pathname === "/signup" ||
-    currentUrl.pathname === "/verify"
+    token &&
+    (currentUrl.pathname === "/login" ||
+      currentUrl.pathname === "/signup" ||
+      currentUrl.pathname === "/verify")
   ) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
