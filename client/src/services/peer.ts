@@ -40,6 +40,14 @@ class PeerService {
       await this.peer.setRemoteDescription(new RTCSessionDescription(ans));
     }
   }
+
+  hasVideoTrack(): boolean {
+    if (this.peer) {
+      const senders = this.peer.getSenders();
+      return senders.some((sender) => sender.track?.kind === "video");
+    }
+    return false;
+  }
 }
 
 const peerService = new PeerService();
