@@ -2,10 +2,10 @@
   "name": "signalling-server",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "build": "tsc -b",
-    "dev": "nodemon ./dist/index.js"
+    "start": "node dist/index.js",
+    "build": "tsc -p .",
+    "dev": "tsc-watch --onSuccess \"node dist/index.js\""
   },
   "keywords": [],
   "author": "",
@@ -13,8 +13,12 @@
   "description": "",
   "dependencies": {
     "body-parser": "^2.2.0",
+    "dotenv": "^17.2.1",
+    "ioredis": "^5.7.0",
     "nodemon": "^3.1.10",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "tsc-watch": "^7.1.1",
+    "typescript": "^5.9.2"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.6"
