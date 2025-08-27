@@ -3,17 +3,44 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mic, Radio, Users } from "lucide-react";
-import React, { useState } from "react";
+import { useSocket } from "@/providers/Socket";
+import { LoaderCircle, Mic, Radio, Users } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
 
 const Dashboard = () => {
-  const [meetingId, setMeetingId] = useState("");
+  const [joinPodcastId, setJoinPodcastId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const socket = useSocket();
+  const { data: session } = useSession();
+  const router = useRouter();
 
-  const handleStartMeeting = () => {};
-  const handleJoinMeeting = () => {
-    // Logic to join a meeting
-  };
+  const handleStartMeeting = useCallback(() => {
+    if (!session?.user?.email) return;
+    socket.emit("room:create", { email: session?.user.email });
+    setLoading(true);
+  }, [socket, session]);
+
+  const handleRoomJoin = useCallback(() => {
+    if (!session?.user?.email || !joinPodcastId) return;
+    //socket.emit("room:join", { roomId: joinPodcastId, email: session?.user.email });
+    router.push(`/meeting/${joinPodcastId}`);
+  }, [session, joinPodcastId, router]);
+
+  const handleRoomCreated = useCallback(({ roomId }: { roomId: string }) => {
+    console.log("Room created with ID:", roomId);
+    setLoading(false);
+    router.push(`/meeting/${roomId}`);
+  }, []);
+
+  useEffect(() => {
+    socket.on("room:created", handleRoomCreated);
+
+    return () => {
+      socket.off("room:created", handleRoomCreated);
+    };
+  }, [socket, handleRoomCreated]);
 
   return (
     <div className="flex justify-center items-center">
@@ -29,9 +56,16 @@ const Dashboard = () => {
                   guest
                 </p>
               </div>
-              <Button className="w-full text-xs sm:text-sm group bg-green-200 text-green-700 hover:bg-green-200 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out">
+              <Button
+                onClick={handleStartMeeting}
+                className="w-full text-xs sm:text-sm group bg-green-200 text-green-700 hover:bg-green-200 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out"
+              >
                 <Radio className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Start Podcast
+                {loading ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  "Start New Podcast"
+                )}
               </Button>
             </div>
 
@@ -58,12 +92,13 @@ const Dashboard = () => {
               <div className="space-y-3">
                 <Input
                   placeholder="Enter Meeting ID"
-                  value={meetingId}
-                  onChange={(e) => setMeetingId(e.target.value)}
+                  value={joinPodcastId}
+                  onChange={(e) => setJoinPodcastId(e.target.value)}
                   className="text-xs sm:text-sm text-white placeholder:text-white/60"
                 />
                 <Button
-                  disabled={!meetingId}
+                  onClick={handleRoomJoin}
+                  disabled={!joinPodcastId}
                   className="w-full text-xs sm:text-sm group bg-white text-green-700 hover:bg-white/90 font-semibold cursor-pointer shadow-xl transition-all duration-150 ease-in-out"
                 >
                   <Users className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
