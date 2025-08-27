@@ -147,7 +147,7 @@ const VerifyEmail = () => {
               id="email"
               type="email"
               placeholder="Enter your registered email"
-              className="text-xs sm:text-sm text-white"
+              className="text-xs sm:text-sm text-white placeholder:text-white/70"
             />
           </div>
         )}

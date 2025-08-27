@@ -94,7 +94,7 @@ const Login = () => {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className="text-xs sm:text-sm text-white"
+            className="text-xs sm:text-sm text-white placeholder:text-white/70"
           />
         </div>
         <div className="space-y-2 w-full">
@@ -111,7 +111,7 @@ const Login = () => {
               id="password"
               type={passwordVisible ? "text" : "password"}
               placeholder="Enter your password"
-              className="text-xs sm:text-sm text-white"
+              className="text-xs sm:text-sm text-white placeholder:text-white/70"
             />
             {passwordVisible ? (
               <EyeOff
