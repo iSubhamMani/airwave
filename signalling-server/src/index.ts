@@ -67,18 +67,27 @@ io.on("connection", (socket) => {
   });
 
   socket.on("user:call", ({ to, offer }) => {
+    console.log(`User ${socket.id} is calling ${to}`);
     io.to(to).emit("incoming:call", { from: socket.id, offer });
   });
 
   socket.on("call:accepted", ({ to, ans }) => {
+    console.log(`User ${socket.id} is sending ans ${to}`);
     io.to(to).emit("call:accepted", { from: socket.id, ans });
   });
 
+  socket.on("request:stream", ({ to }) => {
+    console.log(`User ${socket.id} is requesting ${to} to send stream`);
+    io.to(to).emit("send:stream", { from: socket.id });
+  });
+
   socket.on("peer:nego:needed", ({ to, offer }) => {
+    console.log("Nego needed from", socket.id, "to", to);
     io.to(to).emit("peer:nego:needed", { from: socket.id, offer });
   });
 
   socket.on("peer:nego:done", ({ to, ans }) => {
+    console.log("Nego done from", socket.id, "to", to);
     io.to(to).emit("peer:nego:final", { from: socket.id, ans });
   });
 });
