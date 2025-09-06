@@ -5,18 +5,34 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { toast } from "sonner";
 import { useSocket } from "@/providers/Socket";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Users } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  Users,
+  Copy,
+} from "lucide-react";
 import PeerService from "@/services/peer";
 import { useRouter } from "next/navigation";
+import StreamMeeting from "./StreamMeeting";
+import { errorStyle, successStyle } from "./Toast";
 
-const Meeting = ({ peerService }: { peerService: PeerService }) => {
+const Meeting = ({
+  peerService,
+  meetId,
+}: {
+  peerService: PeerService;
+  meetId: string;
+}) => {
   const [remoteSocketId, setRemoteSocketId] = useState<string | null>(null);
   const [myStream, setMyStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
-  const [meetingId, setMeetingId] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [hostSid, setHostSid] = useState<string | null>(null);
   const router = useRouter();
 
   const socket = useSocket();
@@ -99,13 +115,15 @@ const Meeting = ({ peerService }: { peerService: PeerService }) => {
       offer: RTCSessionDescriptionInit;
     }) => {
       const ans = await peerService.getAnswer(offer);
+      setHostSid(from);
       socket.emit("call:accepted", { to: from, ans });
     },
     [socket, peerService]
   );
 
   const handleCallAccepted = useCallback(
-    async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
+    async ({ ans, host }: { ans: RTCSessionDescriptionInit; host: string }) => {
+      setHostSid(host);
       await peerService.setAnswer(ans);
       sendStream();
       const pc = peerService.peer;
@@ -197,35 +215,26 @@ const Meeting = ({ peerService }: { peerService: PeerService }) => {
     }
   };
 
-  // Share meeting ID
-  const shareMeeting = () => {
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "Join my podcast",
-          text: "Join my live podcast session",
-          url: window.location.href,
-        })
-        .catch((err) => {
-          console.log("Error sharing:", err);
-        });
-    } else {
-      copyToClipboard();
-    }
-  };
-
   // Copy meeting ID to clipboard
   const copyToClipboard = () => {
     navigator.clipboard
-      .writeText(meetingId || window.location.href)
+      .writeText(meetId)
       .then(() => {
         setIsCopied(true);
-        toast.success("Meeting link copied to clipboard");
+        toast("Copied!", {
+          duration: 1000,
+          position: "bottom-right",
+          style: successStyle,
+        });
         setTimeout(() => setIsCopied(false), 2000);
       })
       .catch((err) => {
         console.error("Failed to copy:", err);
-        toast.error("Failed to copy meeting link");
+        toast("Failed to Copy!", {
+          duration: 2000,
+          position: "bottom-right",
+          style: errorStyle,
+        });
       });
   };
 
@@ -297,6 +306,15 @@ const Meeting = ({ peerService }: { peerService: PeerService }) => {
 
   return (
     <main className="w-full z-50 relative min-h-screen flex flex-col">
+      <div className="p-4 flex justify-end">
+        <Button
+          onClick={copyToClipboard}
+          size="sm"
+          className={`cursor-default bg-neutral-800 text-green-200 hover:bg-neutral-800/80`}
+        >
+          Podcast ID: {meetId} <Copy />
+        </Button>
+      </div>
       {/* Video grid */}
       <section className="flex-1 p-4 md:p-6">
         <div className="grid grid-cols-1 items-center md:grid-cols-2 gap-2 sm:gap-4 md:gap-6 max-w-7xl mx-auto h-full">
@@ -397,33 +415,35 @@ const Meeting = ({ peerService }: { peerService: PeerService }) => {
           <Button
             onClick={toggleMic}
             size="lg"
-            className={`cursor-pointer rounded-full h-12 w-12 p-0 ${isMicOn ? "bg-white hover:bg-green-100" : "bg-red-500 hover:bg-red-600"}`}
+            className={`cursor-pointer group rounded-full h-12 w-12 p-0 ${isMicOn ? "bg-white hover:bg-green-100" : "bg-red-500 hover:bg-red-600"}`}
           >
             {isMicOn ? (
-              <Mic className="size-5 text-green-700" />
+              <Mic className="size-5 text-green-700 group-hover:scale-110" />
             ) : (
-              <MicOff className="size-5" />
+              <MicOff className="size-5 group-hover:scale-110" />
             )}
           </Button>
 
           <Button
             onClick={toggleVideo}
             size="lg"
-            className={`cursor-pointer rounded-full h-12 w-12 p-0 ${isVideoOn ? "bg-white hover:bg-green-100" : "bg-red-500 hover:bg-red-600"}`}
+            className={`cursor-pointer group rounded-full h-12 w-12 p-0 ${isVideoOn ? "bg-white hover:bg-green-100" : "bg-red-500 hover:bg-red-600"}`}
           >
             {isVideoOn ? (
-              <Video className="size-5 text-green-700" />
+              <Video className="size-5 text-green-700 group-hover:scale-110" />
             ) : (
-              <VideoOff className="size-5" />
+              <VideoOff className="size-5 group-hover:scale-110 transition-transform" />
             )}
           </Button>
+
+          {hostSid?.trim() && hostSid !== remoteSocketId && <StreamMeeting />}
 
           <Button
             onClick={endCall}
             size="lg"
             className="cursor-pointer rounded-full h-14 w-14 p-0 bg-red-600 hover:bg-red-700"
           >
-            <PhoneOff className="size-5" />
+            <PhoneOff className="size-5 group-hover:scale-110 transition-transform" />
           </Button>
         </div>
       </footer>
