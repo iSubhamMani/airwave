@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
   socket.on("room:join", async ({ roomId, email }) => {
     const meetingData = await meetingTable.get(roomId);
     if (!meetingData) {
-      socket.emit("room:error", { message: "Room not found" });
+      socket.emit("room:error", { message: "Podcast not found." });
       return;
     }
 
@@ -73,7 +73,7 @@ io.on("connection", (socket) => {
 
   socket.on("call:accepted", ({ to, ans }) => {
     console.log(`User ${socket.id} is sending ans ${to}`);
-    io.to(to).emit("call:accepted", { from: socket.id, ans });
+    io.to(to).emit("call:accepted", { host: to, from: socket.id, ans });
   });
 
   socket.on("request:stream", ({ to }) => {
