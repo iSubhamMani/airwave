@@ -1,6 +1,6 @@
 "use client";
 
-import { useSocket } from "@/providers/Socket";
+import { useSignallingSocket } from "@/providers/SignallingSocket";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import axios from "axios";
 
 const MeetingPage = () => {
   const { mid } = useParams();
-  const socket = useSocket();
+  const socket = useSignallingSocket();
   const { data: session } = useSession();
   const [peerService, setPeerService] = useState<PeerService | null>(null);
   const [loading, setLoading] = useState(true);

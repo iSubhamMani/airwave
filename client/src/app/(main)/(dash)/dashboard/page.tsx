@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useSocket } from "@/providers/Socket";
+import { useSignallingSocket } from "@/providers/SignallingSocket";
 import { LoaderCircle, Mic, Radio, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import React, { useCallback, useEffect, useState } from "react";
 const Dashboard = () => {
   const [joinPodcastId, setJoinPodcastId] = useState("");
   const [loading, setLoading] = useState(false);
-  const socket = useSocket();
+  const socket = useSignallingSocket();
   const { data: session } = useSession();
   const router = useRouter();
 
