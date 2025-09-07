@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
 const SocketContext = createContext<Socket | null>(null);
 
-export const useSocket = () => {
+export const useSignallingSocket = () => {
   const socket = useContext(SocketContext);
   if (!socket) {
     throw new Error("Socket not initialized");
@@ -13,7 +13,11 @@ export const useSocket = () => {
   return socket;
 };
 
-const SocketProvider = ({ children }: { children: React.ReactNode }) => {
+const SignallingSocketProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
@@ -32,4 +36,4 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default SocketProvider;
+export default SignallingSocketProvider;
