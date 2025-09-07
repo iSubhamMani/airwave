@@ -3,7 +3,8 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { toast } from "sonner";
-import { useSocket } from "@/providers/Socket";
+import { useSignallingSocket } from "@/providers/SignallingSocket";
+import { useStreamSocket } from "@/providers/StreamSocket";
 import { Button } from "@/components/ui/button";
 import {
   Mic,
@@ -31,13 +32,18 @@ const Meeting = ({
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isCopied, setIsCopied] = useState(false);
+  const [, setIsCopied] = useState(false);
   const [hostSid, setHostSid] = useState<string | null>(null);
   const router = useRouter();
 
-  const socket = useSocket();
+  const signallingSocket = useSignallingSocket();
+  const streamSocket = useStreamSocket();
+
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+
+  const [isStreaming, setIsStreaming] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Set video sources when streams change
   useEffect(() => {
@@ -89,9 +95,9 @@ const Meeting = ({
       if (!remoteSid) return;
 
       const offer = await peerService.getOffer();
-      socket.emit("user:call", { to: remoteSid, offer });
+      signallingSocket.emit("user:call", { to: remoteSid, offer });
     },
-    [peerService, socket]
+    [peerService, signallingSocket]
   );
 
   const handleUserJoined = useCallback(({ socketId }: { socketId: string }) => {
@@ -116,9 +122,9 @@ const Meeting = ({
     }) => {
       const ans = await peerService.getAnswer(offer);
       setHostSid(from);
-      socket.emit("call:accepted", { to: from, ans });
+      signallingSocket.emit("call:accepted", { to: from, ans });
     },
-    [socket, peerService]
+    [signallingSocket, peerService]
   );
 
   const handleCallAccepted = useCallback(
@@ -130,7 +136,7 @@ const Meeting = ({
       if (pc) {
         const onStable = () => {
           if (pc.signalingState === "stable") {
-            socket.emit("request:stream", { to: remoteSocketId });
+            signallingSocket.emit("request:stream", { to: remoteSocketId });
 
             // cleanup after firing once
             pc.removeEventListener("signalingstatechange", onStable);
@@ -140,7 +146,7 @@ const Meeting = ({
         pc.addEventListener("signalingstatechange", onStable);
       }
     },
-    [peerService, sendStream, socket, remoteSocketId]
+    [peerService, sendStream, signallingSocket, remoteSocketId]
   );
 
   const handleSendStream = useCallback(() => {
@@ -153,8 +159,8 @@ const Meeting = ({
 
   const handleNegotiationNeeded = useCallback(async () => {
     const offer = await peerService.getOffer();
-    socket.emit("peer:nego:needed", { offer, to: remoteSocketId });
-  }, [remoteSocketId, socket, peerService]);
+    signallingSocket.emit("peer:nego:needed", { offer, to: remoteSocketId });
+  }, [remoteSocketId, signallingSocket, peerService]);
 
   const handlePeerNegotiationFinal = useCallback(
     async ({ ans }: { ans: RTCSessionDescriptionInit }) => {
@@ -172,10 +178,132 @@ const Meeting = ({
       offer: RTCSessionDescriptionInit;
     }) => {
       const ans = await peerService.getAnswer(offer);
-      socket.emit("peer:nego:done", { ans, to: from });
+      signallingSocket.emit("peer:nego:done", { ans, to: from });
     },
-    [socket, peerService]
+    [signallingSocket, peerService]
   );
+
+  // Function to create and return the combined video and audio stream
+  const createCombinedStream = useCallback(async () => {
+    if (!localVideoRef.current || !remoteVideoRef.current || !myStream) {
+      toast.error("Both streams are required to start streaming!", {
+        style: errorStyle,
+      });
+      return null;
+    }
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const localVideo = localVideoRef.current;
+    const remoteVideo = remoteVideoRef.current;
+
+    // Set canvas dimensions based on video sizes
+    const width = localVideo.videoWidth + remoteVideo.videoWidth;
+    const height = Math.max(localVideo.videoHeight, remoteVideo.videoHeight);
+    canvas.width = width;
+    canvas.height = height;
+
+    const drawLoop = () => {
+      if (!isStreaming) return; // Stop drawing when streaming ends
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Draw local video, scaled to fit the left side
+        ctx.drawImage(
+          localVideo,
+          0,
+          0,
+          localVideo.videoWidth,
+          localVideo.videoHeight
+        );
+
+        // Draw remote video on the right side
+        if (remoteStream) {
+          ctx.drawImage(
+            remoteVideo,
+            localVideo.videoWidth,
+            0,
+            remoteVideo.videoWidth,
+            remoteVideo.videoHeight
+          );
+        }
+      }
+      requestAnimationFrame(drawLoop);
+    };
+
+    drawLoop();
+
+    // Capture the canvas stream
+    const combinedVideoTrack = canvas.captureStream(30).getVideoTracks()[0];
+    const combinedAudioTrack = myStream.getAudioTracks()[0];
+
+    // Create a new stream with the combined video and the local audio
+    const combinedStream = new MediaStream([
+      combinedVideoTrack,
+      combinedAudioTrack,
+    ]);
+    return combinedStream;
+  }, [myStream, remoteStream, isStreaming]);
+
+  // Function to start the streaming process
+  const startStreaming = useCallback(async () => {
+    if (isStreaming) {
+      toast.info("Streaming is already in progress.");
+      return;
+    }
+
+    // Create the combined stream
+    const combinedStream = await createCombinedStream();
+    if (!combinedStream) return;
+
+    // Set up MediaRecorder
+    mediaRecorderRef.current = new MediaRecorder(combinedStream, {
+      mimeType: "video/webm; codecs=vp9,opus",
+      audioBitsPerSecond: 128000,
+      videoBitsPerSecond: 2500000,
+    });
+
+    mediaRecorderRef.current.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        // Emit the video chunk to the server
+        streamSocket.emit("video-chunk", e.data);
+      }
+    };
+
+    mediaRecorderRef.current.onstart = () => {
+      setIsStreaming(true);
+      toast.success("Streaming started!", {
+        style: successStyle,
+      });
+    };
+
+    mediaRecorderRef.current.onstop = () => {
+      setIsStreaming(false);
+      toast.info("Streaming stopped.");
+    };
+
+    mediaRecorderRef.current.onerror = (e) => {
+      console.error("MediaRecorder error:", e);
+      toast.error("An error occurred during streaming.", {
+        style: errorStyle,
+      });
+    };
+
+    // Start recording, sending data every 1 second
+    mediaRecorderRef.current.start(1000);
+  }, [createCombinedStream, isStreaming, streamSocket]);
+
+  // Function to stop the streaming process
+  const stopStreaming = useCallback(() => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
+      mediaRecorderRef.current.stop();
+    }
+    // Also, tell the server to stop
+    streamSocket.emit("stop:stream");
+  }, [streamSocket]);
 
   // Toggle microphone
   const toggleMic = () => {
@@ -249,7 +377,7 @@ const Meeting = ({
     if (peerService.peer) {
       peerService.cleanPeer();
     }
-    socket.emit("call:ended", { to: remoteSocketId });
+    signallingSocket.emit("call:ended", { to: remoteSocketId });
     setRemoteStream(null);
     setRemoteSocketId(null);
     toast.info("Call ended");
@@ -257,25 +385,25 @@ const Meeting = ({
   };
 
   useEffect(() => {
-    socket.on("user:joined", handleUserJoined);
-    socket.on("guest:joined", handleGuestJoined);
-    socket.on("incoming:call", handleIncomingCall);
-    socket.on("call:accepted", handleCallAccepted);
-    socket.on("send:stream", handleSendStream);
-    socket.on("peer:nego:needed", handlePeerNegotiation);
-    socket.on("peer:nego:final", handlePeerNegotiationFinal);
+    signallingSocket.on("user:joined", handleUserJoined);
+    signallingSocket.on("guest:joined", handleGuestJoined);
+    signallingSocket.on("incoming:call", handleIncomingCall);
+    signallingSocket.on("call:accepted", handleCallAccepted);
+    signallingSocket.on("send:stream", handleSendStream);
+    signallingSocket.on("peer:nego:needed", handlePeerNegotiation);
+    signallingSocket.on("peer:nego:final", handlePeerNegotiationFinal);
 
     return () => {
-      socket.off("user:joined", handleUserJoined);
-      socket.off("incoming:call", handleIncomingCall);
-      socket.off("call:accepted", handleCallAccepted);
-      socket.off("send:stream", handleSendStream);
-      socket.off("peer:nego:needed", handlePeerNegotiation);
-      socket.off("peer:nego:final", handlePeerNegotiationFinal);
-      socket.off("guest:joined", handleGuestJoined);
+      signallingSocket.off("user:joined", handleUserJoined);
+      signallingSocket.off("incoming:call", handleIncomingCall);
+      signallingSocket.off("call:accepted", handleCallAccepted);
+      signallingSocket.off("send:stream", handleSendStream);
+      signallingSocket.off("peer:nego:needed", handlePeerNegotiation);
+      signallingSocket.off("peer:nego:final", handlePeerNegotiationFinal);
+      signallingSocket.off("guest:joined", handleGuestJoined);
     };
   }, [
-    socket,
+    signallingSocket,
     handleUserJoined,
     handleIncomingCall,
     handleCallAccepted,
@@ -342,7 +470,8 @@ const Meeting = ({
                 <div className="h-full w-full bg-neutral-950 flex items-center justify-center absolute inset-0">
                   <div className="w-20 h-20 rounded-full bg-green-200 flex items-center justify-center">
                     <span className="text-2xl font-semibold text-green-700">
-                      {socket?.id?.substring(0, 1).toUpperCase() || "Y"}
+                      {signallingSocket?.id?.substring(0, 1).toUpperCase() ||
+                        "Y"}
                     </span>
                   </div>
                 </div>
@@ -436,7 +565,14 @@ const Meeting = ({
             )}
           </Button>
 
-          {hostSid?.trim() && hostSid !== remoteSocketId && <StreamMeeting />}
+          {hostSid?.trim() && hostSid !== remoteSocketId && (
+            <StreamMeeting
+              isStreaming={isStreaming}
+              onStartStreaming={startStreaming}
+              onStopStreaming={stopStreaming}
+              socket={streamSocket}
+            />
+          )}
 
           <Button
             onClick={endCall}
