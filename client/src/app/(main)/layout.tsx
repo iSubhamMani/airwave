@@ -1,7 +1,8 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
-import SocketProvider from "../../providers/Socket";
+import SignallingSocketProvider from "../../providers/SignallingSocket";
+import StreamSocketProvider from "../../providers/StreamSocket";
 import React from "react";
 
 const MainLayout = ({
@@ -10,9 +11,11 @@ const MainLayout = ({
   children: React.ReactNode;
 }>) => {
   return (
-    <SocketProvider>
-      <SessionProvider>{children}</SessionProvider>
-    </SocketProvider>
+    <SignallingSocketProvider>
+      <StreamSocketProvider>
+        <SessionProvider>{children}</SessionProvider>
+      </StreamSocketProvider>
+    </SignallingSocketProvider>
   );
 };
 
