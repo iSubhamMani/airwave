@@ -44,6 +44,7 @@ const Meeting = ({
 
   const [isStreaming, setIsStreaming] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   // Set video sources when streams change
   useEffect(() => {
@@ -184,7 +185,7 @@ const Meeting = ({
   );
 
   // Function to create and return the combined video and audio stream
-  const createCombinedStream = useCallback(async () => {
+  const createCombinedStream = useCallback(() => {
     if (!localVideoRef.current || !remoteVideoRef.current || !myStream) {
       toast.error("Both streams are required to start streaming!", {
         style: errorStyle,
@@ -205,45 +206,52 @@ const Meeting = ({
     canvas.height = height;
 
     const drawLoop = () => {
-      if (!isStreaming) return; // Stop drawing when streaming ends
-      if (ctx) {
+      // Only draw if both video elements are available and streams are active
+      if (
+        ctx &&
+        localVideoRef.current &&
+        localVideoRef.current.readyState >= 2 &&
+        remoteVideoRef.current &&
+        remoteVideoRef.current.readyState >= 2
+      ) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Draw local video, scaled to fit the left side
         ctx.drawImage(
-          localVideo,
+          localVideoRef.current,
           0,
           0,
-          localVideo.videoWidth,
-          localVideo.videoHeight
+          localVideoRef.current.videoWidth,
+          localVideoRef.current.videoHeight
         );
 
-        // Draw remote video on the right side
         if (remoteStream) {
           ctx.drawImage(
-            remoteVideo,
-            localVideo.videoWidth,
+            remoteVideoRef.current,
+            localVideoRef.current.videoWidth,
             0,
-            remoteVideo.videoWidth,
-            remoteVideo.videoHeight
+            remoteVideoRef.current.videoWidth,
+            remoteVideoRef.current.videoHeight
           );
         }
       }
-      requestAnimationFrame(drawLoop);
+
+      // Continue the loop as long as the component is mounted
+      animationFrameIdRef.current = requestAnimationFrame(drawLoop);
     };
 
+    // Start the drawing loop
     drawLoop();
 
-    // Capture the canvas stream
     const combinedVideoTrack = canvas.captureStream(30).getVideoTracks()[0];
     const combinedAudioTrack = myStream.getAudioTracks()[0];
 
-    // Create a new stream with the combined video and the local audio
     const combinedStream = new MediaStream([
       combinedVideoTrack,
       combinedAudioTrack,
     ]);
-    return combinedStream;
-  }, [myStream, remoteStream, isStreaming]);
+
+    // Return both the stream and the cleanup function
+    return { combinedStream };
+  }, [myStream, remoteStream]);
 
   // Function to start the streaming process
   const startStreaming = useCallback(async () => {
@@ -253,12 +261,11 @@ const Meeting = ({
     }
 
     // Create the combined stream
-    const combinedStream = await createCombinedStream();
-    if (!combinedStream) return;
+    const result = createCombinedStream();
+    if (!result || !result.combinedStream) return;
 
     // Set up MediaRecorder
-    mediaRecorderRef.current = new MediaRecorder(combinedStream, {
-      mimeType: "video/webm; codecs=vp9,opus",
+    mediaRecorderRef.current = new MediaRecorder(result.combinedStream, {
       audioBitsPerSecond: 128000,
       videoBitsPerSecond: 2500000,
     });
@@ -289,8 +296,8 @@ const Meeting = ({
       });
     };
 
-    // Start recording, sending data every 1 second
-    mediaRecorderRef.current.start(1000);
+    // Start recording, sending data every 200ms
+    mediaRecorderRef.current.start(200);
   }, [createCombinedStream, isStreaming, streamSocket]);
 
   // Function to stop the streaming process
@@ -300,6 +307,8 @@ const Meeting = ({
       mediaRecorderRef.current.state === "recording"
     ) {
       mediaRecorderRef.current.stop();
+      if (animationFrameIdRef.current)
+        cancelAnimationFrame(animationFrameIdRef.current);
     }
     // Also, tell the server to stop
     streamSocket.emit("stop:stream");
