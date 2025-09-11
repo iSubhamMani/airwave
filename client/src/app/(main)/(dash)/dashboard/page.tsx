@@ -52,7 +52,7 @@ const Dashboard = () => {
               <div className="text-center">
                 <Mic className="mx-auto h-10 w-10 text-green-200 mb-3" />
                 <p className="text-sm text-white">
-                  Create a new podcast room and share the meeting ID with your
+                  Create a new podcast room and share the podcast ID with your
                   guest
                 </p>
               </div>
@@ -86,12 +86,12 @@ const Dashboard = () => {
               <div className="text-center">
                 <Users className="mx-auto h-10 w-10 text-green-200 mb-3" />
                 <p className="text-sm text-white">
-                  Enter the meeting ID to join an existing podcast session
+                  Enter the podcast ID to join an existing podcast session
                 </p>
               </div>
               <div className="space-y-3">
                 <Input
-                  placeholder="Enter Meeting ID"
+                  placeholder="Enter Podcast ID"
                   value={joinPodcastId}
                   onChange={(e) => setJoinPodcastId(e.target.value)}
                   className="text-xs sm:text-sm text-white placeholder:text-white/60"

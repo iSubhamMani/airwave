@@ -43,7 +43,7 @@ const MeetingPage = () => {
   }, [mid, session, socket]);
 
   if (!mid) {
-    return <div>Invalid Meeting ID</div>;
+    return <div>Invalid Podcast ID</div>;
   }
 
   if (loading && !error) {

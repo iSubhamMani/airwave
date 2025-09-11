@@ -1,5 +1,7 @@
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import Logout from "@/components/Logout";
 import { getServerSession } from "next-auth";
+import Image from "next/image";
 
 export default async function MainLayout({
   children,
@@ -33,11 +35,23 @@ export default async function MainLayout({
 
       <div className="flex-1 flex flex-col z-10">
         {/* Header with trigger */}
-        <header className="h-16 flex items-center justify-end backdrop-blur-glass px-6">
-          <div className="flex items-center space-x-2">
+        <header className="h-16 flex items-center justify-between backdrop-blur-glass px-6">
+          <div className="flex items-center justify-center">
+            <div className="overflow-hidden size-9 md:size-12 p-2">
+              <Image
+                src={"/logo.png"}
+                alt="Airwave Logo"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
             <span className="text-sm text-muted-foreground">
               Welcome back, {session.user.name || "User"}
             </span>
+            <Logout />
           </div>
         </header>
 

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Camera, ChevronDown, Play, Shield, Users, Zap } from "lucide-react";
+import { ChevronDown, Play, Radio, Shield, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -56,7 +56,8 @@ export default function Home() {
           </div>
 
           <p className="text-balance text-lg sm:text-xl md:text-2xl mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed">
-            Your all-in-one studio to stream, record, and go live with ease.
+            Your all-in-one studio for effortless, high-quality podcast
+            streaming
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
@@ -76,8 +77,8 @@ export default function Home() {
 
           <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-300">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>10K+ Creators</span>
+              <Radio className="w-4 h-4" />
+              <span>Seamless Streaming</span>
             </div>
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4" />
@@ -109,7 +110,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8">
             {[
               {
                 icon: <Play className="w-8 h-8" />,
@@ -122,12 +123,6 @@ export default function Home() {
                 title: "Ultra-Low Latency",
                 description:
                   "Sub-second latency ensures real-time interaction with your listeners.",
-              },
-              {
-                icon: <Camera className="w-8 h-8" />,
-                title: "Local Recording",
-                description:
-                  "Record high-quality audio and video locally for post-production.",
               },
             ].map((feature, index) => (
               <Card key={index} className="bg-green-800/20 border-green-800">
