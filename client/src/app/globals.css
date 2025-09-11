@@ -163,3 +163,20 @@
   animation-name: animate-shine;
   animation-timing-function: linear;
 }
+
+@keyframes float-orb {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-80px) translateX(-120px) rotate(-45deg);
+  }
+  75% {
+    transform: translateY(80px) translateX(120px) rotate(-45deg);
+  }
+}
+
+.animate-orb {
+  animation: float-orb 20s ease-in-out infinite;
+}
