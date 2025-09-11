@@ -14,12 +14,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.email, email));
+    const existingUser = await db.query.usersTable.findFirst({
+      where: eq(usersTable.email, email),
+    });
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       throw new Error("User already exists with this email");
     }
 

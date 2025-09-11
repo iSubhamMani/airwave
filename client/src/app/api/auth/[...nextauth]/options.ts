@@ -27,16 +27,13 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Find user in the database
-          const users = await db
-            .select()
-            .from(usersTable)
-            .where(eq(usersTable.email, email));
+          const user = await db.query.usersTable.findFirst({
+            where: eq(usersTable.email, email),
+          });
 
-          if (users.length === 0) {
+          if (!user) {
             throw new Error("No user found with this email");
           }
-
-          const user = users[0];
 
           if (!user.isVerified) {
             throw new Error("email_not_verified");
