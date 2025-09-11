@@ -78,7 +78,6 @@ const Signup = () => {
 
           if (res.success) {
             setEmailSent(true);
-            setEmail("");
             setFullname("");
             setPassword("");
             toast("An OTP has been sent to your mail!", {
@@ -87,7 +86,8 @@ const Signup = () => {
               style: successStyle,
             });
 
-            router.replace("/verify");
+            router.replace(`/verify?email=${email}`);
+            setEmail("");
           }
         } catch (error) {
           toast(error instanceof Error ? error.message : "Error sending OTP", {

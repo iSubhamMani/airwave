@@ -15,13 +15,14 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/store/auth";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { LoaderCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const VerifyEmail = () => {
+  const emailFromUrl = useSearchParams().get("email") || "";
   const [otp, setOtp] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
+  const [email, setEmail] = useState<string>(emailFromUrl);
   const [loading, setLoading] = useState<boolean>(false);
   const { emailSent, setEmailSent } = useAuth((store) => store);
   const router = useRouter();
