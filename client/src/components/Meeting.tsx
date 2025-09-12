@@ -393,6 +393,34 @@ const Meeting = ({
     router.push("/dashboard");
   };
 
+  const handlePeerDisconnected = useCallback(() => {
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((track) => track.stop());
+    }
+    if (peerService.peer) {
+      peerService.resetPeer();
+    }
+    setRemoteStream(null);
+    setRemoteSocketId(null);
+    toast.info("Peer disconnected");
+  }, [peerService, remoteStream]);
+
+  const handleHostDisconnected = useCallback(() => {
+    if (myStream) {
+      myStream.getTracks().forEach((track) => track.stop());
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((track) => track.stop());
+    }
+    if (peerService.peer) {
+      peerService.cleanPeer();
+    }
+    setRemoteStream(null);
+    setRemoteSocketId(null);
+    toast.info("Host disconnected");
+    router.push("/dashboard");
+  }, [myStream, peerService, remoteStream, router]);
+
   useEffect(() => {
     signallingSocket.on("user:joined", handleUserJoined);
     signallingSocket.on("guest:joined", handleGuestJoined);
@@ -401,6 +429,8 @@ const Meeting = ({
     signallingSocket.on("send:stream", handleSendStream);
     signallingSocket.on("peer:nego:needed", handlePeerNegotiation);
     signallingSocket.on("peer:nego:final", handlePeerNegotiationFinal);
+    signallingSocket.on("peer:disconnected", handlePeerDisconnected);
+    signallingSocket.on("host:disconnected", handleHostDisconnected);
 
     return () => {
       signallingSocket.off("user:joined", handleUserJoined);
@@ -410,6 +440,8 @@ const Meeting = ({
       signallingSocket.off("peer:nego:needed", handlePeerNegotiation);
       signallingSocket.off("peer:nego:final", handlePeerNegotiationFinal);
       signallingSocket.off("guest:joined", handleGuestJoined);
+      signallingSocket.off("peer:disconnected", handlePeerDisconnected);
+      signallingSocket.off("host:disconnected", handleHostDisconnected);
     };
   }, [
     signallingSocket,
@@ -420,6 +452,8 @@ const Meeting = ({
     handlePeerNegotiation,
     handlePeerNegotiationFinal,
     handleGuestJoined,
+    handlePeerDisconnected,
+    handleHostDisconnected,
   ]);
 
   useEffect(() => {
