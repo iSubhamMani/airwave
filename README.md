@@ -33,7 +33,7 @@ You will need the following software installed:
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/your-username/airwave.git](https://github.com/your-username/airwave.git)
+   git clone https://github.com/iSubhamMani/airwave.git
    cd airwave
    ```
 2. **Set up the Signalling Server:**
