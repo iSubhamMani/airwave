@@ -108,6 +108,24 @@ io.on("connection", (socket) => {
     io.to(to).emit("send:stream", { from: socket.id });
   });
 
+  socket.on("end:call", async ({ to, roomId }) => {
+    const meetingDetails = await meetingTable.get(roomId);
+    if (!meetingDetails) return;
+
+    const details: MeetingDetails = JSON.parse(meetingDetails);
+    if (details.hostSid === to) {
+      details.guest = "";
+      details.guestSid = "";
+      await meetingTable.set(roomId, JSON.stringify(details));
+      io.to(details.hostSid).emit("peer:disconnected");
+    } else {
+      // delete
+      if (details.guestSid && details.guestSid === to)
+        io.to(details.guestSid).emit("call:ended");
+      await meetingTable.del(roomId);
+    }
+  });
+
   socket.on("peer:nego:needed", ({ to, offer }) => {
     console.log("Nego needed from", socket.id, "to", to);
     io.to(to).emit("peer:nego:needed", { from: socket.id, offer });
