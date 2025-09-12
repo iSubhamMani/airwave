@@ -31,7 +31,6 @@ io.on("connection", (socket) => {
     await meetingTable.set(roomId, JSON.stringify(meetingDetails));
     socket.join(roomId);
     socket.emit("room:created", { roomId });
-    console.log(`Room created: ${roomId} by ${email}`);
   });
 
   socket.on("room:join", async ({ roomId, email }) => {
@@ -43,11 +42,41 @@ io.on("connection", (socket) => {
 
     const meetingDetails: MeetingDetails = JSON.parse(meetingData);
 
-    if (meetingDetails.guest) {
-      socket.emit("room:error", { message: "Room is full" });
+    if (
+      meetingDetails.host === email &&
+      meetingDetails.hostSid &&
+      meetingDetails.hostSid === socket.id
+    ) {
       return;
     }
-    if (meetingDetails.host === email) {
+
+    if (
+      meetingDetails.host === email &&
+      meetingDetails.hostSid &&
+      meetingDetails.hostSid !== socket.id
+    ) {
+      meetingDetails.hostSid = socket.id;
+      await meetingTable.set(roomId, JSON.stringify(meetingDetails));
+      return;
+    }
+
+    // reconnect guest
+    if (
+      meetingDetails.guest &&
+      meetingDetails.guest === email &&
+      meetingDetails.guestSid?.trim() &&
+      meetingDetails.guestSid !== socket.id
+    ) {
+      meetingDetails.guestSid = socket.id;
+      await meetingTable.set(roomId, JSON.stringify(meetingDetails));
+      socket.join(roomId);
+      socket.emit("user:joined", {
+        roomId,
+        socketId: meetingDetails.hostSid,
+      });
+      io.to(meetingDetails.hostSid).emit("guest:joined", {
+        socketId: socket.id,
+      });
       return;
     }
 
@@ -60,9 +89,7 @@ io.on("connection", (socket) => {
       roomId,
       socketId: meetingDetails.hostSid,
     });
-    socket
-      .to(meetingDetails.hostSid)
-      .emit("guest:joined", { socketId: socket.id });
+    io.to(meetingDetails.hostSid).emit("guest:joined", { socketId: socket.id });
     console.log(`User ${email} joined room: ${roomId}`);
   });
 
@@ -89,5 +116,37 @@ io.on("connection", (socket) => {
   socket.on("peer:nego:done", ({ to, ans }) => {
     console.log("Nego done from", socket.id, "to", to);
     io.to(to).emit("peer:nego:final", { from: socket.id, ans });
+  });
+
+  socket.on("disconnect", async () => {
+    console.log("Socket disconnected:", socket.id);
+    // emit the other user in the room that the user has disconnected
+    const rooms = await meetingTable.keys("*");
+    for (const roomId of rooms) {
+      const meetingData = await meetingTable.get(roomId);
+      if (!meetingData) continue;
+
+      const meetingDetails: MeetingDetails = JSON.parse(meetingData);
+      let updated = false;
+      let peerToNotify = "";
+      if (meetingDetails.hostSid === socket.id) {
+        if (meetingDetails.guestSid)
+          io.to(meetingDetails.guestSid).emit("host:disconnected");
+        await meetingTable.set(
+          roomId,
+          JSON.stringify({ ...meetingDetails, guestSid: "", guest: "" })
+        );
+        return;
+      }
+      if (meetingDetails.guestSid === socket.id) {
+        meetingDetails.guestSid = "";
+        peerToNotify = meetingDetails.hostSid;
+        updated = true;
+      }
+      if (updated && peerToNotify) {
+        await meetingTable.set(roomId, JSON.stringify(meetingDetails));
+        io.to(peerToNotify).emit("peer:disconnected");
+      }
+    }
   });
 });
