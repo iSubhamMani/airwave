@@ -386,7 +386,7 @@ const Meeting = ({
     if (peerService.peer) {
       peerService.cleanPeer();
     }
-    signallingSocket.emit("call:ended", { to: remoteSocketId });
+    signallingSocket.emit("end:call", { to: remoteSocketId, roomId: meetId });
     setRemoteStream(null);
     setRemoteSocketId(null);
     toast.info("Call ended");
@@ -431,6 +431,7 @@ const Meeting = ({
     signallingSocket.on("peer:nego:final", handlePeerNegotiationFinal);
     signallingSocket.on("peer:disconnected", handlePeerDisconnected);
     signallingSocket.on("host:disconnected", handleHostDisconnected);
+    signallingSocket.on("call:ended", handleHostDisconnected);
 
     return () => {
       signallingSocket.off("user:joined", handleUserJoined);
@@ -442,6 +443,7 @@ const Meeting = ({
       signallingSocket.off("guest:joined", handleGuestJoined);
       signallingSocket.off("peer:disconnected", handlePeerDisconnected);
       signallingSocket.off("host:disconnected", handleHostDisconnected);
+      signallingSocket.off("call:ended", handleHostDisconnected);
     };
   }, [
     signallingSocket,
