@@ -21,9 +21,7 @@ const SignallingSocketProvider = ({
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const _socket = io(
-      "https://ec2-13-127-140-76.ap-south-1.compute.amazonaws.com:8000"
-    );
+    const _socket = io("https://airwave.signaling.subhammani.xyz");
     setSocket(_socket);
 
     return () => {
