@@ -16,11 +16,20 @@ import { useAuth } from "@/store/auth";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { LoaderCircle } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const VerifyEmail = () => {
-  const emailFromUrl = useSearchParams().get("email") || "";
+  const searchParams = useSearchParams();
+  const [emailFromUrl, setEmailFromUrl] = useState("");
+
+  useEffect(() => {
+    const e = searchParams.get("email");
+    if (e) {
+      setEmailFromUrl(e);
+    }
+  }, [searchParams]);
+
   const [otp, setOtp] = useState<string>("");
   const [email, setEmail] = useState<string>(emailFromUrl);
   const [loading, setLoading] = useState<boolean>(false);
