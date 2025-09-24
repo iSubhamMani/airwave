@@ -17,9 +17,7 @@ const StreamSocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const _socket = io(
-      "https://ec2-43-205-94-200.ap-south-1.compute.amazonaws.com:8001"
-    );
+    const _socket = io("https://airwave.stream.subhammani.xyz");
     setSocket(_socket);
 
     return () => {
